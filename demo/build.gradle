@@ -1,0 +1,106 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '2.5.3'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id "com.google.protobuf" version "0.8.18" // tag: grpc
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+sourceSets {
+	main { // sourceSet you want to named
+		proto {
+		}
+		java {
+			srcDir "$projectDir/src/main/java/protoGen"
+		}
+	}
+}
+
+protobuf {
+    generatedFilesBaseDir = "$projectDir/src"
+
+    println "protobuf block"
+    protoc {
+        println "protoc block"
+        artifact = 'com.google.protobuf:protoc:3.21.1'
+    }
+
+    plugins {
+        println "plugins block"
+        grpc {
+            println "plugins/grpc block"
+            artifact = "io.grpc:protoc-gen-grpc-java:1.48.1"
+        }
+    }
+
+    generateProtoTasks {
+        println "clean block"
+        delete "$generatedFilesBaseDir/main/java/protoGen"
+        println "generate proto... under $generatedFilesBaseDir"
+        all().each { task ->
+            task.builtins {
+                java {
+                    outputSubDir = "java/protoGen"
+                }
+            }
+            task.plugins {
+                grpc {
+                    outputSubDir = "java/protoGen"
+                }
+            }
+        }
+
+        println "generate proto done"
+    }
+}
+
+configurations { // configures the dependency configurations for this project
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+
+    // grpc server
+    implementation 'io.github.lognet:grpc-spring-boot-starter:4.5.5'
+
+    // grpc client
+    implementation 'net.devh:grpc-client-spring-boot-starter:2.12.0.RELEASE'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+
+processResources {
+    dependsOn("generateProto")
+}
+
+// tag: grpc
+configurations.all { // Executes the given closure against all objects in ths collection
+    resolutionStrategy.eachDependency { details ->
+        if ("io.grpc".equalsIgnoreCase(details.requested.group)) {
+            details.useVersion "1.48.1"
+        }
+    }
+}

@@ -1,0 +1,5 @@
+grpc:
+  client:
+    mallang-test:  # 원하는 이름
+      address: 'static://127.0.0.1:9090'
+      negotiationType: PLAINTEXT  # Use 'TLS' if you are using TLS
